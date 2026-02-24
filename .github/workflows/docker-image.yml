@@ -17,19 +17,19 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      # Change "./backend" below to your actual backend folder name
+      # Build Backend - Added the folder prefix
       - name: Build and Push Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./crud-dd-task-mean-app/backend
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mean-backend:latest
 
-      # Change "./frontend" below to your actual frontend folder name
+      # Build Frontend - Added the folder prefix
       - name: Build and Push Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./crud-dd-task-mean-app/frontend
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mean-frontend:latest
 
@@ -44,16 +44,16 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            # Pull the latest images
+            docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_TOKEN }}
+            
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/mean-backend:latest
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/mean-frontend:latest
             
-            # Stop existing containers
             docker stop mean-backend mean-frontend || true
             docker rm mean-backend mean-frontend || true
             
-            # Run Backend (Port 3000)
+            # Start Backend (Port 3000 as per your Docker Desktop)
             docker run -d --name mean-backend -p 3000:3000 ${{ secrets.DOCKER_HUB_USERNAME }}/mean-backend:latest
             
-            # Run Frontend (Port 80)
+            # Start Frontend (Port 80 as per your Docker Desktop)
             docker run -d --name mean-frontend -p 80:80 ${{ secrets.DOCKER_HUB_USERNAME }}/mean-frontend:latest
