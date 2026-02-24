@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build and Push Docker images
+      - name: Build and Push
         run: |
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/frontend ./frontend
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/backend ./backend
@@ -28,13 +28,13 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VM via SSH
+      - name: SSH and Update VM
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VM_IP }}
-          username: ${{ secrets.VM_USER }}
+          username: ubuntu
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd ~/your-project-folder
+            cd ~/Discover-Dollar-DevOps
             docker-compose pull
             docker-compose up -d
