@@ -17,24 +17,43 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build and Push Images
-        run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/frontend ./frontend
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/backend ./backend
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/frontend
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/backend
+      # Change "./backend" below to your actual backend folder name
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mean-backend:latest
+
+      # Change "./frontend" below to your actual frontend folder name
+      - name: Build and Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mean-frontend:latest
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: SSH and Deploy to VM
-        uses: appleboy/ssh-action@master
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_IP }}
-          username: ubuntu
+          username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd ~/Discover-Dollar-DevOps
-            docker-compose pull
-            docker-compose up -d
+            # Pull the latest images
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/mean-backend:latest
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/mean-frontend:latest
+            
+            # Stop existing containers
+            docker stop mean-backend mean-frontend || true
+            docker rm mean-backend mean-frontend || true
+            
+            # Run Backend (Port 3000)
+            docker run -d --name mean-backend -p 3000:3000 ${{ secrets.DOCKER_HUB_USERNAME }}/mean-backend:latest
+            
+            # Run Frontend (Port 80)
+            docker run -d --name mean-frontend -p 80:80 ${{ secrets.DOCKER_HUB_USERNAME }}/mean-frontend:latest
