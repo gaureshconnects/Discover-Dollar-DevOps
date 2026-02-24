@@ -20,6 +20,8 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
+          context: .              # This tells Docker to look in the current directory
+          file: ./app/Dockerfile  # Update this to your actual path!
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/my-app:latest
 
